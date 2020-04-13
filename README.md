@@ -13,7 +13,7 @@ The main outcome of this project is the [html-report](PeerGradedAssignment_Pract
 
 The report is created using a [Rmd-file](PeerGradedAssignment_PracticalMachineLearning.Rmd). 
 
-The data which is used for this exercise is downloaded and stored in the [data-folder](\data\).
+The data which is used for this exercise is downloaded and stored in the [data-folder](data\).
 
 As some parts of the exercise require significant computational time, caching of resutls is used. The cache is stored in [this folder]( PeerGradedAssignment_PracticalMachineLearning_cache/html). 
 
