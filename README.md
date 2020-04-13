@@ -9,11 +9,11 @@ This analysis meant to be the basis for the course quiz and a prediction assignm
 
 ## File structure
 
-The main outcome of this project is the html-report. Figures included in the report are store in the folder PeerGradedAssignment_PracticalMachineLearning_files/figure-html.
+The main outcome of this project is the [html-report](PeerGradedAssignment_PracticalMachineLearning.html). Figures included in the report are store in [this folder](PeerGradedAssignment_PracticalMachineLearning_files/figure-html).
 
-The report is created using this Rmd-file. 
+The report is created using a [Rmd-file](PeerGradedAssignment_PracticalMachineLearning.Rmd). 
 
-The data which is used for this exercise is downloaded and stored in the data-folder.
+The data which is used for this exercise is downloaded and stored in the [data-folder](\data\).
 
-As some parts of the exercise require significant computational time, caching of resutls is used. The cache is stored in PeerGradedAssignment_PracticalMachineLearning_cache/html. 
+As some parts of the exercise require significant computational time, caching of resutls is used. The cache is stored in [this folder]( PeerGradedAssignment_PracticalMachineLearning_cache/html). 
 
