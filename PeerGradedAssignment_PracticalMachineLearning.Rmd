@@ -1,0 +1,192 @@
+---
+title: "Prediction Assignment Writeup - Practical Machine Learning Coursera Course"
+author: "RLC Velhorst"
+date: "10-4-2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(cache = TRUE)
+library(knitr)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(rattle)
+library(randomForest)
+library(corrplot)
+library(dplyr)
+set.seed(301)
+```
+
+# Peer-graded Assignment: Prediction Assignment Writeup
+
+This document is the final report of the Peer Assessment project from Coursera’s course Practical Machine Learning, as part of the Specialization in Data Science by John Hopkins University. It was built in RStudio, using its knitr functions. This analysis meant to be the basis for the course quiz and a prediction assignment writeup. 
+
+## Project Goal
+
+The goal of your project is to predict the manner in which 6 participants did a Unilateral Dumbbell Biceps Curl, a weight lifting exercise, based on measurements of on-body sensors. Based on a training dataset, a machine learning model is built. This report describes how the model is built, how cross-validation is used, what the expected out of sample error is and which choices are made during this process. Finally, the prediction model is used to predict 20 test cases.
+
+## Data
+
+### Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+### Source
+
+The *training* data for this project are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The *test* data are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har. 
+
+```{r, echo=FALSE,cache=FALSE}
+
+## Download data
+
+datadir <- "./data"
+fn_train <- "pml-training.csv"
+fn_test <- "pml-testing.csv"
+
+# data directory
+datadir <- "./data"
+if(!file.exists(datadir)){dir.create(datadir)}
+
+# train data
+destf_train <-file.path(datadir, fn_train)
+if(!file.exists(destf_train)){
+  fileUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+  download.file(fileUrl,destfile = destf_train)
+}
+# test data
+destf_test <-file.path(datadir, fn_test)
+if(!file.exists(destf_test)){
+  fileUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+  download.file(fileUrl,destfile = destf_test)
+}
+
+## Load data
+trainingRaw <- read.csv(destf_train, na.strings=c("#DIV/0!","NA"))
+testingRaw <- read.csv(destf_test, na.strings=c("#DIV/0!","NA"))
+
+# ## Exploratry data analysis
+# summary(trainingRaw)
+# summary(testing)
+# 
+# str(trainingRaw)
+# str(testing)
+
+```
+### Prepare data for modeling
+```{r prepdata}
+## Clean the data
+
+# Select columns which are in both training and test data
+commonCols <- intersect(names(testingRaw),names(trainingRaw))
+# drop columns containing only NA
+noNACols1 <- names(testingRaw)[colMeans(is.na(testingRaw))==0]
+noNACols2 <- names(trainingRaw)[colMeans(is.na(trainingRaw))==0]
+useColsAll <- intersect(commonCols, intersect(noNACols1, noNACols2))
+# drop first  columns which are experiment identifiers, not actual measurements
+useCols <- useColsAll[8:length(useColsAll)]
+
+#Use the desired columns to clean both data sets 
+training <- select(trainingRaw, c(useCols,"classe"))
+testing <- select(testingRaw,c(useCols,"problem_id"))
+
+## Split training data
+# create a partition of the training dataset used for building the model, using a 70%-30% ratio
+set.seed(12345) # for reproducability
+inTrain <- createDataPartition(training$classe, p=0.7, list=FALSE)
+trainSet <- training[inTrain, ]
+# Use the other part of the partition to compute performance and accuracy
+testSet <- training[-inTrain, ]
+```
+There are now three datasets:  
+The **trainSet**, which is used to build to model. This data is based on the original *training* data.  
+The **testSet**, which is used to evaluate the out-of-sample model performance. This data is based on the original *training* data.  
+The **testing** data, which is submitted to the predictive model as final result of the exercise. This data is based on the original *test* data.  
+
+### Exploratory data analysis
+```{r plottarget}
+# Show distribution of the target variable
+target <- training$classe
+plot(target, main="Frequency of different levels", xlab="classe", ylab="Frequency")
+```
+
+The classe variable is roughly equally distributed over 5 levels: A, B, C, D and E. No special attention is needed to evaluate a specific level for accuracy and/or specificity. 
+
+## Predictive Model
+Three different methods are used to built and evaluated a predeictive model. The used methods are: Linear Discriminant Analysis (LDA), a Random Forest model (RF) and a Generalized Boosted Model (GBM). 
+
+### Training the model
+The three models are built using the default options option of the *caret* package. The variable **classe** is predicted using all variable which resulted from the data cleaning. The *trainSet* dataset is used to train the models. 
+
+#### Model 1: Linear Discriminant Analysis
+```{r fitmodel1}
+set.seed(12321)
+# Fit model
+model.lda <- train(classe ~., data=trainSet, method="lda")
+```
+#### Model 2: Random Forest model
+```{r fitmodel2}
+set.seed(12321)
+# Fit model
+model.rf <- train(classe ~., data=trainSet, method="rf")
+```
+#### Model 3: Generalized Boosted Model
+```{r fitmodel3}
+set.seed(12321)
+# Fit model
+model.gbm <- train(classe ~., data=trainSet, method="gbm", verbose=FALSE)
+```
+
+### Cross-validation of the models
+The models are cross-validated useing the validation set approach. The three models are used to predict the *classe* variable in the *testSet* dataset, and the prediction is compared to the original data to estimate the out-of-sample error. A confusionmatrix is computed to investigated the result.
+
+#### Model 1: Linear Discriminant Analysis
+```{r crossval1}
+# Predicting
+prediction.lda <- predict(model.lda, testSet)
+# Testing
+confMat.lda <- confusionMatrix(prediction.lda, testSet$classe)
+```
+#### Model 2: Random Forest model
+```{r crossval2}
+# Predicting
+prediction.rf <- predict(model.rf, testSet)
+# Testing
+confMat.rf <- confusionMatrix(prediction.rf, testSet$classe)
+```
+#### Model 3: Generalized Boosted Model
+```{r crossval3}
+# Predicting
+prediction.gbm <- predict(model.gbm, testSet)
+# Testing
+confMat.gbm <- confusionMatrix(prediction.gbm, testSet$classe)
+```
+
+#### Confusion Matrices
+```{r showConfmat, cache=FALSE}
+confMat.lda
+confMat.rf
+confMat.gbm
+```
+
+### Choice of the final model
+The accuray of the models are: LDA `r round(confMat.lda$overall['Accuracy'], 4)` , RF `r round(confMat.rf$overall['Accuracy'], 4)` and GBM `r round(confMat.gbm$overall['Accuracy'], 4)`. Therefore the **Random Forest model** is chosen to use on the *testing* dataset, as it achieved the highest accuracy.
+
+
+## Prediction
+The Random Roest model is used to predict the *classe* variable of the *testing* dataset
+
+```{r predictTest, cache=FALSE}
+testingResults <- predict(model.rf, testing)
+t(data.frame(testingResults, row.names = testing$problem_id))
+```
+
