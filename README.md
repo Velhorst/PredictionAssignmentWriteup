@@ -14,12 +14,13 @@ The goal of the project is to predict the manner in which 6 participants did a U
 ### Report
 The main outcome of this project is the final html-report. To view the report, [go to this html-report preview](https://htmlpreview.github.io/?https://github.com/Velhorst/PredictionAssignmentWriteup/blob/master/PeerGradedAssignment_PracticalMachineLearning.html).
 
+#### Supporting files for the report
 The report is created using a [Rmd-file](PeerGradedAssignment_PracticalMachineLearning.Rmd). 
 Figures included in the report are store in [this folder](PeerGradedAssignment_PracticalMachineLearning_files/figure-html).
 The [original html-report](PeerGradedAssignment_PracticalMachineLearning.html) is located in this repository, which shows the html-code. 
  
 ### Data
-The data which is used for this exercise is downloaded and stored in the [data-folder](data).
+The data which is used for this exercise is downloaded and stored in the [data-folder](data). A description of the data is presented in the report. 
 
 ### Cache
 As some parts of the exercise require significant computational time, caching of resutls is used. The cache is stored in [this folder]( PeerGradedAssignment_PracticalMachineLearning_cache/html). 
